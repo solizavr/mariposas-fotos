@@ -3,7 +3,9 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from database import db
 import json
-
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
 def abrir_crud_mariposas():
     ventana = tk.Toplevel()
@@ -166,11 +168,55 @@ def abrir_crud_mariposas():
         ]
         nuevos["imagenes"] = lista_imgs
 
-        db.especies.update_one({"nombre_cientifico": nombre_original},
-                               {"$set": nuevos})
+        db.especies.update_one({"nombre_cientifico": nombre_original},{"$set": nuevos})
         messagebox.showinfo("Éxito", "Mariposa editada.")
         limpiar_campos()
         cargar_especies()
+
+    def exportar_pdf():
+        try:
+            especies = list(db.especies.find({}))
+
+            if not especies:
+                messagebox.showwarning("Sin datos", "No hay especies para exportar.")
+                return
+
+            archivo = "mariposas_exportadas.pdf"
+            doc = SimpleDocTemplate(archivo, pagesize=letter)
+            styles = getSampleStyleSheet()
+            story = []
+
+            story.append(Paragraph("<b>REPORTE DE ESPECIES DE MARIPOSAS</b>", styles["Title"]))
+            story.append(Spacer(1, 20))
+
+            for esp in especies:
+                nombre = esp.get("nombre_cientifico", "")
+                comun = esp.get("nombre_comun", "")
+                familia = esp.get("familia", "")
+                tipo = esp.get("tipo_especie", "")
+                descripcion = esp.get("descripcion", "")
+                caracteristicas = esp.get("caracteristicas_morfo", {})
+                imagenes = esp.get("imagenes", [])
+
+                texto = (
+                    f"<b>Nombre Científico:</b> {nombre}<br/>"
+                    f"<b>Nombre Común:</b> {comun}<br/>"
+                    f"<b>Familia:</b> {familia}<br/>"
+                    f"<b>Tipo:</b> {tipo}<br/>"
+                    f"<b>Descripción:</b> {descripcion}<br/>"
+                    f"<b>Características:</b> {json.dumps(caracteristicas)}<br/>"
+                    f"<b>Imágenes:</b> {', '.join(imagenes)}<br/><br/>"
+                )
+
+                story.append(Paragraph(texto, styles["Normal"]))
+                story.append(Spacer(1, 10))
+
+            doc.build(story)
+
+            messagebox.showinfo("Éxito", f"PDF exportado correctamente como:\n{archivo}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo exportar el PDF:\n{str(e)}")
 
     #Botones CRUD
     frame_botones = tk.Frame(ventana, bg="#ede7f6")
@@ -186,6 +232,8 @@ def abrir_crud_mariposas():
               width=12, command=limpiar_campos).pack(side="left", padx=6)
     tk.Button(frame_botones, text="Cerrar", bg="#616161", fg="white",
               width=12, command=ventana.destroy).pack(side="left", padx=6)
+    tk.Button(frame_botones, text="Exportar PDF", bg="#283593", fg="white",
+    command=exportar_pdf).pack(side="left", padx=10)
 
     #Selección en tabla
     def cargar_en_formulario(event):
