@@ -4,7 +4,6 @@ from tkinter import messagebox
 from PIL import Image, ImageTk
 import requests
 import io
-import os
 import folium
 import webbrowser
 from database import db
@@ -30,10 +29,8 @@ def abrir_principal3(usuario):
     encabezado = tk.Frame(root, bg="#7b1fa2", height=60)
     encabezado.pack(fill="x")
 
-    tk.Label(encabezado,
-             text=f"Usuario: {usuario.get('nombre')} (Rol: {usuario.get('rol')})",
-             bg="#7b1fa2", fg="white", font=("Arial", 12, "bold")
-             ).pack(padx=10, pady=10, anchor="w")
+    tk.Label(encabezado,text=f"Usuario: {usuario.get('nombre')} (Rol: {usuario.get('rol')})",
+    bg="#7b1fa2", fg="white", font=("Arial", 12, "bold")).pack(padx=10, pady=10, anchor="w")
 
     #Contenido
     contenido = tk.Frame(root, bg="#f3e5f5")
@@ -44,14 +41,12 @@ def abrir_principal3(usuario):
     panel_izq.pack(side="left", fill="y", padx=(0, 10))
 
     #Buscar
-    tk.Label(panel_izq, text="Buscar especie:", bg="#e1bee7",
-             font=("Arial", 10, "bold")).pack(pady=(5, 0))
+    tk.Label(panel_izq, text="Buscar especie:", bg="#e1bee7", font=("Arial", 10, "bold")).pack(pady=(5, 0))
 
     entry_buscar = tk.Entry(panel_izq, width=30)
     entry_buscar.pack(pady=5)
 
-    tk.Label(panel_izq, text="Especies", bg="#e1bee7",
-             font=("Arial", 12, "bold")).pack(pady=(10, 5))
+    tk.Label(panel_izq, text="Especies", bg="#e1bee7", font=("Arial", 12, "bold")).pack(pady=(10, 5))
 
     #Lista mariposas
     listbox = tk.Listbox(panel_izq, width=40, height=20)
@@ -74,22 +69,18 @@ def abrir_principal3(usuario):
                 {"nombre_comun": {"$regex": query, "$options": "i"}}
             ]}
 
-        resultados = list(db.especies.find(filtro,
-                                           {"nombre_cientifico": 1, "nombre_comun": 1}))
+        resultados = list(db.especies.find(filtro, {"nombre_cientifico": 1, "nombre_comun": 1}))
         for e in resultados:
             display = f"{e.get('nombre_cientifico', '')} — {e.get('nombre_comun', '')}"
             listbox.insert(tk.END, display)
 
-    tk.Button(panel_izq, text="Buscar",
-              command=buscar_especies,
-              bg="#6a1b9a", fg="white").pack(pady=(0, 10))
+    tk.Button(panel_izq, text="Buscar", command=buscar_especies, bg="#6a1b9a", fg="white").pack(pady=(0, 10))
 
     #panel de la derecha
     panel_der = tk.Frame(contenido, bg="#ffffff")
     panel_der.pack(side="left", fill="both", expand=True)
 
-    lbl_nombre = tk.Label(panel_der, text="Seleccione una especie",
-                          font=("Arial", 14, "bold"), bg="#ffffff")
+    lbl_nombre = tk.Label(panel_der, text="Seleccione una especie", font=("Arial", 14, "bold"), bg="#ffffff")
     lbl_nombre.pack(anchor="nw", pady=(10, 0), padx=10)
 
     lbl_info = tk.Label(panel_der, text="", font=("Arial", 12),
@@ -182,14 +173,10 @@ def abrir_principal3(usuario):
     botones_img = tk.Frame(panel_der, bg="#ffffff")
     botones_img.pack()
 
-    btn_atras = tk.Button(botones_img, text="◀ Atrás",
-                          bg="#7b1fa2", fg="white",
-                          command=lambda: cambiar_imagen(-1))
+    btn_atras = tk.Button(botones_img, text="◀ Atrás", bg="#7b1fa2", fg="white", command=lambda: cambiar_imagen(-1))
     btn_atras.pack(side="left", padx=10)
 
-    btn_siguiente = tk.Button(botones_img, text="Siguiente ▶",
-                              bg="#7b1fa2", fg="white",
-                              command=lambda: cambiar_imagen(1))
+    btn_siguiente = tk.Button(botones_img, text="Siguiente ▶", bg="#7b1fa2", fg="white", command=lambda: cambiar_imagen(1))
     btn_siguiente.pack(side="left", padx=10)
 
     def cambiar_imagen(delta):
@@ -215,9 +202,7 @@ def abrir_principal3(usuario):
     # CRUD solo para admin
     if usuario.get("rol") == "administrador":
         tk.Button(botones_frame, text="Administrar Mariposas",
-                  bg="#00796b", fg="white",
-                  command=abrir_crud_mariposas
-                  ).pack(side="left", padx=10)
+        bg="#00796b", fg="white", command=abrir_crud_mariposas).pack(side="left", padx=10)
 
     # cargar primera especie de lista
     if especies:
