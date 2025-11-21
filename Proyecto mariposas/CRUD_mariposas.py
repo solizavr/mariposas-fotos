@@ -3,9 +3,10 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from database import db
 import json
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Paragraph
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.pagesizes import letter
+from bson.json_util import dumps 
 
 def abrir_crud_mariposas():
     ventana = tk.Toplevel()
@@ -68,9 +69,7 @@ def abrir_crud_mariposas():
 
     fila = 0
     for etiqueta, campo in campos.items():
-        tk.Label(left, text=etiqueta.replace("_"," ").title(),
-                 bg="#d1c4e9", font=("Arial", 11)).grid(row=fila, column=0,
-                 padx=5, pady=4, sticky="e")
+        tk.Label(left, text=etiqueta.replace("_"," ").title(), bg="#d1c4e9", font=("Arial", 11)).grid(row=fila, column=0, padx=5, pady=4, sticky="e")
         campo.grid(row=fila, column=1, padx=5, pady=4)
         fila += 1
 
@@ -83,14 +82,12 @@ def abrir_crud_mariposas():
     txt_descripcion.pack(pady=5)
 
     # Características JSON
-    tk.Label(right, text="Características (JSON)",
-             bg="#d1c4e9", font=("Arial", 11)).pack()
+    tk.Label(right, text="Características (JSON)", bg="#d1c4e9", font=("Arial", 11)).pack()
     txt_caracteristicas = tk.Text(right, width=40, height=4)
     txt_caracteristicas.pack(pady=5)
 
     # Imágenes
-    tk.Label(right, text="Imágenes (URLs separadas por coma o salto de línea)",
-             bg="#d1c4e9", font=("Arial", 11)).pack()
+    tk.Label(right, text="Imágenes (URLs separadas por coma o salto de línea)", bg="#d1c4e9", font=("Arial", 11)).pack()
     txt_imagenes = tk.Text(right, width=40, height=4)
     txt_imagenes.pack(pady=5)
 
@@ -174,64 +171,51 @@ def abrir_crud_mariposas():
         cargar_especies()
 
     def exportar_pdf():
+        especies = list(db.especies.find({}))
+
         try:
-            especies = list(db.especies.find({}))
-
-            if not especies:
-                messagebox.showwarning("Sin datos", "No hay especies para exportar.")
-                return
-
-            archivo = "mariposas_exportadas.pdf"
-            doc = SimpleDocTemplate(archivo, pagesize=letter)
-            styles = getSampleStyleSheet()
-            story = []
-
-            story.append(Paragraph("<b>REPORTE DE ESPECIES DE MARIPOSAS</b>", styles["Title"]))
-            story.append(Spacer(1, 20))
-
-            for esp in especies:
-                nombre = esp.get("nombre_cientifico", "")
-                comun = esp.get("nombre_comun", "")
-                familia = esp.get("familia", "")
-                tipo = esp.get("tipo_especie", "")
-                descripcion = esp.get("descripcion", "")
-                caracteristicas = esp.get("caracteristicas_morfo", {})
-                imagenes = esp.get("imagenes", [])
-
-                texto = (
-                    f"<b>Nombre Científico:</b> {nombre}<br/>"
-                    f"<b>Nombre Común:</b> {comun}<br/>"
-                    f"<b>Familia:</b> {familia}<br/>"
-                    f"<b>Tipo:</b> {tipo}<br/>"
-                    f"<b>Descripción:</b> {descripcion}<br/>"
-                    f"<b>Características:</b> {json.dumps(caracteristicas)}<br/>"
-                    f"<b>Imágenes:</b> {', '.join(imagenes)}<br/><br/>"
-                )
-
-                story.append(Paragraph(texto, styles["Normal"]))
-                story.append(Spacer(1, 10))
-
-            doc.build(story)
-
-            messagebox.showinfo("Éxito", f"PDF exportado correctamente como:\n{archivo}")
-
+            json_texto = dumps(especies, indent=4, ensure_ascii=False)
         except Exception as e:
-            messagebox.showerror("Error", f"No se pudo exportar el PDF:\n{str(e)}")
+            messagebox.showerror("ERROR", f"No se pudo convertir a JSON:\n{e}")
+            return
+
+        archivo = "mariposas_exportadas.pdf"
+        doc = SimpleDocTemplate(archivo, pagesize=letter)
+        estilos = getSampleStyleSheet()
+        estilo = estilos["Normal"]
+        elementos = []
+
+        for linea in json_texto.split("\n"):
+            elementos.append(
+                Paragraph(
+                    f"<font face='Courier'>{linea.replace(' ', '&nbsp;')}</font>",
+                    estilo
+                )
+            )
+
+        try:
+            doc.build(elementos)
+            messagebox.showinfo(
+                "Exportación exitosa",
+                f"El PDF se ha guardado como:\n{archivo}"
+            )
+        except Exception as e:
+            messagebox.showerror("ERROR", f"No se pudo generar el PDF:\n{e}")
 
     #Botones CRUD
     frame_botones = tk.Frame(ventana, bg="#ede7f6")
     frame_botones.pack(pady=10)
 
     tk.Button(frame_botones, text="Agregar", bg="#00796b", fg="white",
-              width=12, command=crear_especie).pack(side="left", padx=6)
+    width=12, command=crear_especie).pack(side="left", padx=6)
     tk.Button(frame_botones, text="Editar", bg="#6a1b9a", fg="white",
-              width=12, command=editar_especie).pack(side="left", padx=6)
+    width=12, command=editar_especie).pack(side="left", padx=6)
     tk.Button(frame_botones, text="Eliminar", bg="#c62828", fg="white",
-              width=12, command=eliminar_especie).pack(side="left", padx=6)
+    width=12, command=eliminar_especie).pack(side="left", padx=6)
     tk.Button(frame_botones, text="Limpiar", bg="#5d4037", fg="white",
-              width=12, command=limpiar_campos).pack(side="left", padx=6)
+    width=12, command=limpiar_campos).pack(side="left", padx=6)
     tk.Button(frame_botones, text="Cerrar", bg="#616161", fg="white",
-              width=12, command=ventana.destroy).pack(side="left", padx=6)
+    width=12, command=ventana.destroy).pack(side="left", padx=6)
     tk.Button(frame_botones, text="Exportar PDF", bg="#283593", fg="white",
     command=exportar_pdf).pack(side="left", padx=10)
 
