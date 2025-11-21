@@ -1,0 +1,6 @@
+pymongo
+certifi
+pillow
+requests
+folium
+tkinter
